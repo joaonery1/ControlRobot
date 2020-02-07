@@ -46,15 +46,17 @@ unsigned long nossamillis ()
   return millis_return;
 }
 
+//________________________tudo acima é usado para o millis________________________
+
 int main (void)
 {
-  //configuracao sensor distancia
-  int trigPin = 4; //output
-  int echoPin = 5; //input
+  //configuracao do sensor distancia
+  int trigPin = 4;
+  int echoPin = 5; 
   long duration, cm;
 
   unsigned char sensorInfra_pino_6; //sensor infraVermelho frente
-  unsigned char sensorInfra_pino_7; //sensor infraVermelho atras
+  unsigned char sensorInfra_pino_7; //sensor infraVermelho trás
 
   Serial.begin(9600);
   inicia_millis(16000000UL);  //clock 16MHz
@@ -63,14 +65,14 @@ int main (void)
 
   // bits 2, 3 = 2 motores esquerda
   // bit 4 e 5 = pinos do sensor de distancia
-  // bit 6 = sensor frente; bit 7 = sensor atras;
+  // bit 6 = sensor frente; bit 7 = sensor trás;
   // bits contados de 0 ~ 7
   DDRD = B00011100;
 
-  // bits 0, 1, 2, e 3 =  motores direita
-  DDRB = B00001111;
+  // bits 0 e 1 =  motores direita
+  DDRB = B00000011;
 
-  unsigned long timerDelay = 100; //delay da rotina completa em ms
+  unsigned long timerDelay = 30; //delay da rotina completa em ms
   unsigned long timerDelayFaixa = 500; //delay para recuar da faixa
   unsigned long anterior = 0; //variavel auxiliar para o delay
 
@@ -81,7 +83,8 @@ int main (void)
 
     if (currentMillis - anterior > timerDelay) {
 
-      //configuração do sensor ultrasonico
+      //sensor ultrasonico lê a distancia
+      //e coloca na variavel cm
       digitalWrite(trigPin, LOW);
       delayMicroseconds(5);
       digitalWrite(trigPin, HIGH);
@@ -95,31 +98,39 @@ int main (void)
       Serial.println();
 
       //avançar contra obstaculo, ou girar para buscar
+      //avanca caso distancia obtida seja menor q 20cm
       if (cm <= 20) {
         PORTD = B00000100;
-        PORTB = B00000101;
+        PORTB = B00000001;
         Serial.println("Avancando");
 		
         //quando encontrar objeto e comecar a avancar, 
         //abaixo verifica o sensor infraVermelho da frente
-        if (sensorInfra_pino_6 == 0) {
-          //para testar esse sensor, coloque == 1
+        if (sensorInfra_pino_6 == 1) {
+          //mantenha pressionado o botao de cima para testar
+          
+          //a funcao linhaFrente e linhaTras esta no final
+          //as funcoes linhaFrente e linhaTras usam essa variavel 
+          // 'anterior' para fazer o delay definido na variavel timerDelayFaixa
+          
           linhaFrente(anterior, timerDelayFaixa);
           Serial.println("Recuando da Linha da frente");
         }
 
       } else {
         PORTD = B00001000;
-        PORTB = B00000101;
+        PORTB = B00000001;
         Serial.println("Procurando-Girando");
         
         //enquanto gira, verifica ambos os sensores infraVermelhos
-        if (sensorInfra_pino_7 == 0) {
-          //para testar esse sensor, coloque == 1
+        if (sensorInfra_pino_7 == 1) {
+          //sensor de linha traseiro
+          //mantenha pressionado o botao de tras para testar
           linhaTras(anterior, timerDelayFaixa);
           Serial.println("Recuando da Linha de tras");
-        }else if(sensorInfra_pino_6 == 0){
-          //para testar esse sensor, coloque == 1
+        }else if(sensorInfra_pino_6 == 1){
+          //sensor de linha dianteiro
+          //mantenha pressionado o botao de cima para testar
           linhaFrente(anterior, timerDelayFaixa);
           Serial.println("Recuando da Linha da frente");
         }        
@@ -135,9 +146,11 @@ void linhaFrente(unsigned long anterior, unsigned long timerDelayFaixa) {
   while (1) {
     unsigned long currentMillis = nossamillis();
     PORTD = B00001000;
-    PORTB = B00001010;
+    PORTB = B00000010;
 
     if (currentMillis - anterior > timerDelayFaixa) {
+      //apos contabilizar o valor definido na variavel timerDelayFaixa
+      //ele sai dessa funcao e volta la pra cima
       break;
     }
   }
@@ -148,13 +161,20 @@ void linhaTras(unsigned long anterior, unsigned long timerDelayFaixa) {
   while (1) {
     unsigned long currentMillis = nossamillis();
     PORTD = B00000100;
-    PORTB = B00000101;
+    PORTB = B00000001;
 
     if (currentMillis - anterior > timerDelayFaixa) {
+      //apos contabilizar o valor definido na variavel timerDelayFaixa
+      //ele sai dessa funcao e volta la pra cima
+      
+      //estava pensando em colocar while sensor_x == 1
+      //dai ele nao vai sair daqui ate sair da linha
+      
       break;
     }
 
   }
 }
 
-https://www.tinkercad.com/things/cLdpadSNFDO-copy-of-aula-4-sexta-try-1/editel?sharecode=6L4om7MPwTfWDHrEs4J-ujbBBFlBt8mDH7bAhi3P3-g=
+
+
