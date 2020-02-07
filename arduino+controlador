@@ -1,0 +1,70 @@
+int main (void)
+{
+  Serial.begin(1000);
+  DDRB=B00111100;
+  while(1){
+    //frente    
+  }if(1){
+    //ré
+   PORTD=B0010100;
+   _delay_ms(1000);
+    
+    
+  }
+  if(1){
+    //frente<
+   PORTD=B00010100;
+   _delay_ms(1000);
+  }
+  if(1){
+    //frente>
+    PORTD=B00001000;
+    _delay_ms(1000);
+  }
+  if(1){
+    PORTD=B00001000;
+    _delay_ms(1000);
+  }
+  
+  if(1){
+  PORTD=B001100;
+  _delay_ms(1000);
+  }
+  
+  if(1){
+  PORTD=B0001100;
+  _delay_ms(1000);
+  
+  
+    
+  }
+  unsigned char sensor_pino_7; 
+ unsigned char sensor_pino_6; 
+  
+ DDRD = DDRD |B00111100;
+ Serial.begin (9600);
+ while(1) {   
+ sensor_pino_7 =   (PIND & 128)>> 7; 
+ sensor_pino_6 =   (PIND & 64)>> 6;   
+ Serial.println (sensor_pino_6 , DEC);   
+   
+   if (sensor_pino_7 == 1)
+   {
+     PORTD = B00101000; 
+   }  
+   
+   if (sensor_pino_6 == 1)
+   {
+     PORTD = B00010100;; 
+   }
+   
+    if (sensor_pino_6 == 0 && sensor_pino_7 == 0 )
+    {
+      PORTD = B00111100; 
+    }   
+}
+ 
+  
+ 
+}
+
