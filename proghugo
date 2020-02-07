@@ -1,0 +1,161 @@
+#include <avr/io.h>
+#include <util/delay.h>
+#include <util/atomic.h>
+#include <avr/interrupt.h>
+
+volatile unsigned long timer1_millis;  // faixa de valores vai de 0 a 4.294.967.295 (2^32 - 1)
+
+//--------------------------------------------------------
+// rotina de interruoção do TIMER1
+ISR(TIMER1_COMPA_vect)
+{
+  timer1_millis++;
+}
+
+//--------------------------------------------------------
+// configura e inicia o TIMER1
+void inicia_millis(unsigned long f_cpu)
+{
+  unsigned long ctc_match_overflow;
+  ctc_match_overflow = ((f_cpu / 1000) / 8); // overflow do timer em 1ms
+
+  // (limpar timer qdo cooresponder a ctc_match_overflow) | (clock divisor por 8)
+  TCCR1B |= (1 << WGM12) | (1 << CS11);
+
+  // high byte primeiro, depois low byte
+  OCR1AH = (ctc_match_overflow >> 8);
+  OCR1AL = ctc_match_overflow;
+
+  // habilita compare match interrupt
+  TIMSK1 |= (1 << OCIE1A);
+
+  //habilita GLOBAL INTERRUPTS
+  sei();
+}
+
+//--------------------------------------------------------
+//funcao que retorna o numero de milisegundos passados
+// desde que o microcontrolador foi iniciado
+unsigned long nossamillis ()
+{
+  unsigned long millis_return;
+  // bloca execucao
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    millis_return = timer1_millis;
+  }
+  return millis_return;
+}
+
+int main (void)
+{
+  //configuracao sensor distancia
+  int trigPin = 4; //output
+  int echoPin = 5; //input
+  long duration, cm;
+
+  unsigned char sensorInfra_pino_6; //sensor infraVermelho frente
+  unsigned char sensorInfra_pino_7; //sensor infraVermelho atras
+
+  Serial.begin(9600);
+  inicia_millis(16000000UL);  //clock 16MHz
+
+  // 0 = input; 1 = output
+
+  // bits 2, 3 = 2 motores esquerda
+  // bit 4 e 5 = pinos do sensor de distancia
+  // bit 6 = sensor frente; bit 7 = sensor atras;
+  // bits contados de 0 ~ 7
+  DDRD = B00011100;
+
+  // bits 0, 1, 2, e 3 =  motores direita
+  DDRB = B00001111;
+
+  unsigned long timerDelay = 100; //delay da rotina completa em ms
+  unsigned long timerDelayFaixa = 500; //delay para recuar da faixa
+  unsigned long anterior = 0; //variavel auxiliar para o delay
+
+  while (1) {
+    unsigned long currentMillis = nossamillis();
+    sensorInfra_pino_6 =   (PIND & 64) >> 6;
+    sensorInfra_pino_7 =   (PIND & 128) >> 7;
+
+    if (currentMillis - anterior > timerDelay) {
+
+      //configuração do sensor ultrasonico
+      digitalWrite(trigPin, LOW);
+      delayMicroseconds(5);
+      digitalWrite(trigPin, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(trigPin, LOW);
+      duration = pulseIn(echoPin, HIGH);
+      cm = (duration / 2) / 29.1;
+
+      Serial.print(cm);
+      Serial.print("cm");
+      Serial.println();
+
+      //avançar contra obstaculo, ou girar para buscar
+      if (cm <= 20) {
+        PORTD = B00000100;
+        PORTB = B00000101;
+        Serial.println("Avancando");
+		
+        //quando encontrar objeto e comecar a avancar, 
+        //abaixo verifica o sensor infraVermelho da frente
+        if (sensorInfra_pino_6 == 0) {
+          //para testar esse sensor, coloque == 1
+          linhaFrente(anterior, timerDelayFaixa);
+          Serial.println("Recuando da Linha da frente");
+        }
+
+      } else {
+        PORTD = B00001000;
+        PORTB = B00000101;
+        Serial.println("Procurando-Girando");
+        
+        //enquanto gira, verifica ambos os sensores infraVermelhos
+        if (sensorInfra_pino_7 == 0) {
+          //para testar esse sensor, coloque == 1
+          linhaTras(anterior, timerDelayFaixa);
+          Serial.println("Recuando da Linha de tras");
+        }else if(sensorInfra_pino_6 == 0){
+          //para testar esse sensor, coloque == 1
+          linhaFrente(anterior, timerDelayFaixa);
+          Serial.println("Recuando da Linha da frente");
+        }        
+        
+      }
+      anterior = currentMillis;
+    }
+  }
+}
+
+void linhaFrente(unsigned long anterior, unsigned long timerDelayFaixa) {
+
+  while (1) {
+    unsigned long currentMillis = nossamillis();
+    PORTD = B00001000;
+    PORTB = B00001010;
+
+    if (currentMillis - anterior > timerDelayFaixa) {
+      break;
+    }
+  }
+  }
+  
+void linhaTras(unsigned long anterior, unsigned long timerDelayFaixa) {
+
+  while (1) {
+    unsigned long currentMillis = nossamillis();
+    PORTD = B00000100;
+    PORTB = B00000101;
+
+    if (currentMillis - anterior > timerDelayFaixa) {
+      break;
+    }
+
+  }
+}
+
+
+
