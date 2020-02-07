@@ -1,0 +1,93 @@
+#include <avr/io.h>
+#include <util/delay.h>
+
+
+int main (void){
+// Serial.begin(9600);
+// DDRD=B00111100;
+  
+  
+ unsigned char sensor_pino_7; 
+ unsigned char sensor_pino_6; 
+  
+ DDRD = DDRD |B00111100;
+ Serial.begin (9600);
+ while(1) {   
+ sensor_pino_7 =   (PIND & 128)>> 7; 
+ sensor_pino_6 =   (PIND & 64)>> 6;   
+ Serial.println (sensor_pino_6 , DEC);   
+     if (sensor_pino_7 == 1)
+   {
+     PORTD = B00101000; 
+   }  
+   
+   if (sensor_pino_6 == 1)
+   {
+     PORTD = B00010100;; 
+   }
+   
+    if (sensor_pino_6 == 0 && sensor_pino_7 == 0 )
+    {
+      PORTD = B00111100; 
+    }   
+  
+  while(1){
+   // PORTD=B00010100;
+   //PORTD=B00101000;
+   //PORTD=B00001000;    
+    if(0){
+      //DIREITA NEGATIVO + ESQUERDO POSITIVO
+      PORTD=B00101000;     
+    }
+    if(0){
+      //ESQUERDA NEGATIVO + DIREITA NEGATIVO
+      PORTD=B00010100;      
+    }
+    if(0){
+      //ESQUERDA FRENTE(POSITIVO)
+      PORTD=B00100000;      
+    }
+    if(0){
+      //ESQUERDA NEGATIVO
+      PORTD=B00010000;           
+    } 
+    if(0){
+      //DIREITA POSITIVO
+      PORTD=B00000100;      
+    }
+    if(0){
+      //DIREITA NEGATIVO
+      PORTD=B00001000;      
+    }      
+  }//finalwhile
+     
+    
+ }
+  
+    
+    
+    
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
